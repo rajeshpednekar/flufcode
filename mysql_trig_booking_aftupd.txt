@@ -1,0 +1,96 @@
+/*************************************
+
+Mysql Trigger : trig_booking_aftupd
+(fluff code)
+
+TABLE: wp7c_booking
+TIME: AFTER
+EVENT: UPDATE
+TARGET TABLE: wp7c_booking_audit
+
+***************************************/
+
+
+BEGIN
+	
+		  insert into wp7c_booking_audit 
+      (booking_id ,
+					booking_type,
+					cost,
+					modification_date,
+					booking_date,
+					approved,
+					title,
+					booking_type_id,
+                    firstname ,
+                    lastname,
+                    emailaddress ,
+                    timerange,
+                    phonenumber 
+          )
+          select 
+            		a.booking_id ,
+					a.booking_type,
+					a.cost,
+					a.modification_date,
+					b.booking_date,
+					b.approved,
+					c.title,
+					c.booking_type_id,
+                   SUBSTRING_INDEX(
+substring(
+  (form),
+  (    position("^name1^" in form) + 
+ length("^name1^")
+  ) 
+),
+"~",1 ) as firstname ,
+SUBSTRING_INDEX(
+substring(
+  (form),
+  (    position("^secondname1^" in form) + 
+ length("^secondname1^")
+  ) 
+),
+"~",1 ) as lastname ,
+
+SUBSTRING_INDEX(
+substring(
+  (form),
+  (    position("^email1^" in form) + 
+ length("^email1^")
+  ) 
+),
+"~",1 ) as emailaddress ,
+SUBSTRING_INDEX(
+substring(
+  (form),
+  (    position("^rangetime1^" in form) + 
+ length("^rangetime1^")
+  ) 
+),
+"~",1 ) as timerange ,
+SUBSTRING_INDEX(
+substring(
+  (form),
+  (    position("^phone1^" in form) + 
+ length("^phone1^")
+  ) 
+),
+"~",1 ) as phonenumber 
+                                        
+			from wp7c_booking a, wp7c_bookingdates b,
+            ( select max(booking_date) booking_date, 
+              booking_id FROM
+             wp7c_bookingdates group by booking_id, booking_date) maxb , wp7c_bookingtypes c
+           where 
+            a.booking_id = b.booking_id
+                and b.booking_date = maxb.booking_date 
+                and b.booking_id = maxb.booking_id
+		and a.booking_type = c.booking_type_id
+                and a.pay_status = 'PayPal:OK' 
+                and a.cost > 0 
+                and a.modification_date = new.modification_date
+					and a.booking_id =  new.booking_id ;
+    
+    END
